@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # T-MCD
 
 ## Environment
@@ -48,3 +49,6 @@ In this study, we used wt_N2_030131_01 in the WDDD dataset.
 
 # Acknowledgements
 The model of co-detection CNN included in this is borrowed from [co-detection CNN](https://github.com/naivete5656/WSCTBFP).
+=======
+# T-MCD_dev
+>>>>>>> refs/remotes/origin/main
