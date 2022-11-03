@@ -2,13 +2,16 @@
 
 from PIL import Image
 import cv2
-from datetime import datetime
+from datetime import date, datetime
 import numpy as np
 import os
 import re
 import shutil
 import torch.utils.data as data
 
+#改変
+import pandas as pd
+#
 
 class CustomConstantTimeDataset(data.Dataset):
     def __init__(self, n: int, dataset_root: str, transform=None, phase='train'):
@@ -37,11 +40,15 @@ class CustomConstantTimeDataset(data.Dataset):
         image_filenames = []
         label_filenames = []
         # PILライブラリで画像を試し読みして、modeで画像orラベルを判断する。
-        for i in range(2):
-            if Image.open(dataset_files[i][0]).mode == "P":
-                image_filenames = dataset_files[1 - i]
-                label_filenames = dataset_files[i]
-        assert bool(len(image_filenames)), "Error: label image mode is must 'P'"
+        #'p'はパレットを表しRGBになっている
+        #改変
+        if len(dataset_files) == 2:
+        #
+            for i in range(2):
+                if Image.open(dataset_files[i][0]).mode == "P":
+                    image_filenames = dataset_files[1 - i]
+                    label_filenames = dataset_files[i]
+            assert bool(len(image_filenames)), "Error: label image mode is must 'P'"
         assert len(image_filenames) == len(label_filenames), "Error: the dataset is must the same sample size"
         self.data_size = len(image_filenames)
 
@@ -53,6 +60,7 @@ class CustomConstantTimeDataset(data.Dataset):
 
         # データを移し替え
         # image
+        print(np.array(images).shape)
         images = np.asarray(images)[:, :, :, np.newaxis]
         filename = os.path.join(self.tmp_dir, 'image')
         self.fp_set['image'] = np.memmap(filename, dtype=np.uint8, mode='w+', shape=images.shape)
@@ -90,7 +98,7 @@ class CustomConstantTimeDataset(data.Dataset):
             images.append(self.fp_set['image'][index + self.n * i])
             labels.append(self.fp_set['label'][index + self.n * i])
             times.append(index + self.n * i)
-        dataset = self.transform(
+        dataset = self.transform( #辞書型にしている
             self.phase,
             image1=images[0],
             image2=images[1],
@@ -101,3 +109,32 @@ class CustomConstantTimeDataset(data.Dataset):
         )
         dataset.setdefault('times', times)
         return dataset
+
+#改変
+
+    # def get_data(self):
+    #     par_list=pd.read_csv("log/20221013_185410/list_pairs.csv")
+    #     return par_list
+
+
+    # def __getitem__(self, index):
+    #     images = []
+    #     labels = []
+    #     times = []
+    #     par=self.get_data()
+    #     for i in range(3):
+    #         images.append(self.fp_set['image'][par[index]])
+    #         labels.append(self.fp_set['label'][par[index]])
+    #         times.append(index + self.n * i)
+    #     dataset = self.transform( #辞書型にしている
+    #         self.phase,
+    #         image1=images[0],
+    #         image2=images[1],
+    #         image3=images[2],
+    #         label1=labels[0],
+    #         label2=labels[1],
+    #         label3=labels[2],
+    #     )
+    #     dataset.setdefault('times', times)
+    #     return dataset
+#

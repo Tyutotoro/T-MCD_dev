@@ -1,0 +1,7 @@
+dbscreen → wddd 		: 20220627_181012
+20220627_181012のdistance	: 20221013_185410
+dbscreen → wddd 学習中のheatmap : 20221025_143827
+dbscreen → wddd instancenorm	: 20221103_112121
+dbscreen → wddd instancenorm	のdistance : 20221103_130223
+dbscreen → atp-4 		: 20221103_181856
+dbscreen → wddd2_WT		: 20221103_

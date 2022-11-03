@@ -88,3 +88,11 @@ class CustomDataset(data.Dataset):
         dataset = self.transform(self.phase, image=image, label=label)
         dataset.setdefault('time', index)
         return dataset
+
+    # def __getitem__(self,index):
+    #     # for i in range(3):
+    #     image=self.fp_set['image'][index[i]]
+    #     label=self.fp_set['label'][index[i]]
+    #     dataset = self.transform(self.phase, image=image[i], label=label[i])
+    #     dataset.setdefault('time', index[i])
+    #     return dataset

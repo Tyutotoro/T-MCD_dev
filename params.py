@@ -2,15 +2,39 @@ from typing import Dict, List
 
 datasets: Dict[str, List[str]] = {
     "dbscreen": [
-        "./data/dbscreen/interval_40s/train",
-        "./data/dbscreen/interval_40s/val",
-        "./data/dbscreen/interval_40s/test",
+    #     "./data/dbscreen/interval_40s/train",
+    #     "./data/dbscreen/interval_40s/val",
+    #     "./data/dbscreen/interval_40s/test",
+        
+        "./data/dbscreen/interval_40s/train/image",
+        "./data/dbscreen/interval_40s/train/label",
+        "./data/dbscreen/interval_40s/val/image",
+        "./data/dbscreen/interval_40s/val/label",
+        "./data/dbscreen/interval_40s/test/image",
+        "./data/dbscreen/interval_40s/test/label",
     ],
     "wddd": [
         "./data/wddd/interval_40s/train",
         "./data/wddd/interval_40s/val",
-        "./data/wddd/interval_40s/test"
+        "./data/wddd/interval_40s/test",
+    ],
+    "atp-4": [
+        "./data/atp-4/atp_data/train/image",
+        "",
+        "./data/atp-4/atp_data/val/image",
+        "",
+        "./data/atp-4/atp_data/test/image",
+        "",
+    ],
+    "WDDD2_WT": [
+        "./data/WDDD2_WT/train/image",
+        "",
+        "./data/WDDD2_WT/val/image",
+        "",
+        "./data/WDDD2_WT/test/image",
+        "",
     ]
+
 }
 
 train_count = 1
@@ -18,11 +42,11 @@ train_count = 1
 seed = None
 batch_size = 5
 num_iter = 8
-num_epochs = 500
+num_epochs = 500  #500が基本
 
 # params for dataset and data loader
 source = "dbscreen"                     # option: (dbscreen, wddd)
-target = "wddd"                         # option: (dbscreen, wddd)
+target = "atp-4"                         # option: (dbscreen, wddd)
 dataset_type = 'constant'               # option: (constant, randam, same, none)
 val_index_list = range(41)[1:]
 

@@ -89,12 +89,12 @@ class Adapt(Evaluate):
                 ###########################
                 #         STEP1           #
                 ###########################
-                self.set_requires_grad([self.model_g, self.model_f1, self.model_f2], True)
-                self.optimizer_g.zero_grad()
-                self.optimizer_f.zero_grad()
-                step1_train_losses.append(self.backward_step1(images_src, label_src))
-                self.optimizer_g.step()
-                self.optimizer_f.step()
+                self.set_requires_grad([self.model_g, self.model_f1, self.model_f2], True)  # #型の判定、型が違えば計算から外す
+                self.optimizer_g.zero_grad() #勾配の初期化
+                self.optimizer_f.zero_grad()#勾配の初期化
+                step1_train_losses.append(self.backward_step1(images_src, label_src)) #逆伝搬
+                self.optimizer_g.step()#パラメータ更新
+                self.optimizer_f.step()#パラメータ更新
 
                 ###########################
                 #         STEP2           #
@@ -128,7 +128,7 @@ class Adapt(Evaluate):
                 print("## early stop ##")
                 return
 
-            # Validate
+        #    Validate
             self.model_g.eval()
             self.model_f1.eval()
             self.model_f2.eval()

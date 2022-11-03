@@ -30,6 +30,8 @@ class Logger:
         self.memo_path = self.log_path.joinpath("memo.txt")
         self.info_path = self.log_path.joinpath("info.log")
         self.validate_path = self.log_path.joinpath("validate.log")
+        #distance追加
+        self.distance_path=self.log_path.joinpath("distance")
         self.save_model_count = 0
         self.best = None
         self.monitor_logs = None
@@ -37,6 +39,8 @@ class Logger:
         self.loss_logs = {}
         self.acc_logs = {}
         os.makedirs(self.log_path, exist_ok=True)
+        #distance追加
+        os.makedirs(self.distance_path, exist_ok=True)
         os.makedirs(self.snapshot_path, exist_ok=True)
 
         self.save_src_files(self.save_src_path)

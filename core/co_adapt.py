@@ -11,6 +11,8 @@ from module.torch import metrics
 from module.torch.logger import Logger
 import params
 
+import os
+
 
 class CoAdapt(CoEvaluate):
     def __init__(self, logger: Logger):
@@ -35,7 +37,6 @@ class CoAdapt(CoEvaluate):
         )
         print(self.model_g)
         print(self.model_f1)
-
     @staticmethod
     def discrepancy(out1, out2):
         return torch.mean(torch.abs(f.softmax(out1, dim=1) - f.softmax(out2, dim=1)))
@@ -44,13 +45,12 @@ class CoAdapt(CoEvaluate):
         feat_src = self.model_g(images_src_list[0], images_src_list[1])
         predict1 = self.model_f1(feat_src[0])
         predict2 = self.model_f2(feat_src[1])
-
         # 誤差逆伝搬
         loss_c1 = self.cce_criterion(predict1, label_src_list[0])
         loss_c2 = self.cce_criterion(predict2, label_src_list[1])
         loss = loss_c1 + loss_c2
         loss.backward(retain_graph=retain_graph)
-        return loss.item()
+        return loss.item() 
 
     def backward_step2(self, images_src_list, labels_src_list, images_tgt_list, retain_graph=False):
         # src t-1, t
@@ -93,14 +93,20 @@ class CoAdapt(CoEvaluate):
             step1_train_losses = []
             step2_train_losses = []
             step3_train_losses = []
-
+            #かいへん
+            step1_feature=[]
+            # 
             self.model_g.train()
             self.model_f1.train()
             self.model_f2.train()
 
+            src_datasets_iter = iter(src_train_loader)
+            tgt_datasets_iter = iter(tgt_train_loader)
             for _ in progressbar(range(params.num_iter)):
-                src_datasets = next(iter(src_train_loader))
-                tgt_datasets = next(iter(tgt_train_loader))
+
+                src_datasets = next(src_datasets_iter)
+                tgt_datasets = next(tgt_datasets_iter)
+
                 images_src_list = [
                     src_datasets['image1'].to(self.device),
                     src_datasets['image2'].to(self.device),
@@ -116,23 +122,29 @@ class CoAdapt(CoEvaluate):
                     tgt_datasets['image2'].to(self.device),
                     tgt_datasets['image3'].to(self.device)
                 ]
-
                 ###########################
-                #         STEP1           #
+                #         STEP1           #　
                 ###########################
-                self.set_requires_grad([self.model_g, self.model_f1, self.model_f2], True)
+                #model_g, f1, f2の学習
+                self.set_requires_grad([self.model_g, self.model_f1, self.model_f2], True) #勾配を計算させるモデルの選択(Tureで計算させる)
                 self.optimizer_g.zero_grad()
                 self.optimizer_f1.zero_grad()
                 self.optimizer_f2.zero_grad()
-                for i in range(2):
+                for i in range(2): #画像を同時に入力
                     step1_train_losses.append(self.backward_step1(images_src_list[i:i + 2], labels_src_list[i:i + 2]))
                     self.optimizer_g.step()
                     self.optimizer_f1.step()
                     self.optimizer_f2.step()
-
+                #改変
+                self.set_requires_grad([self.model_g], False)
+                feature1=(self.model_g(images_src_list[0],images_src_list[0])[2])
+                feature1=feature1.to('cpu').detach().numpy().copy()
+                step1_feature.append(feature1)
+                #
                 ###########################
                 #         STEP2           #
                 ###########################
+                #model_f1,f2 の学習　f1,f2の
                 self.set_requires_grad([self.model_g], False)
                 self.optimizer_f1.zero_grad()
                 self.optimizer_f2.zero_grad()
@@ -170,7 +182,7 @@ class CoAdapt(CoEvaluate):
             self.model_f2.eval()
             self.set_requires_grad([self.model_g, self.model_f1, self.model_f2], False)
             validations = []
-            for val_loader in [src_val_loader, tgt_val_loader]:
+            for val_loader in [src_val_loader]:
                 total_loss = []
                 total_hist = np.zeros((params.num_class, params.num_class))
                 for dataset in progressbar(val_loader):
@@ -180,11 +192,11 @@ class CoAdapt(CoEvaluate):
                         dataset['image3'].to(self.device),
                     ]
                     labels = dataset['label2'].to(self.device)
-                    times_list = dataset['times']
-                    if times_list[1] in params.val_index_list:
-                        loss, hist = self.forward(images_list, labels)[:2]
-                        total_loss.append(loss)
-                        total_hist += hist
+                    # times_list = dataset['times']
+                    # if times_list[1] in params.val_index_list:
+                    loss, hist = self.forward(images_list, labels)[:2]
+                    total_loss.append(loss)
+                    total_hist += hist
 
                 validations.append((np.mean(total_loss), metrics.iou_metrics(total_hist, mode='mean')))
 
@@ -198,8 +210,8 @@ class CoAdapt(CoEvaluate):
                     "step3_dis_loss": np.mean(step3_train_losses),
                     "src_val_loss": validations[0][0],
                     "src_val_iou": validations[0][1],
-                    "tgt_val_loss": validations[1][0],
-                    "tgt_val_iou": validations[1][1],
+                    # "tgt_val_loss": validations[1][0],
+                    # "tgt_val_iou": validations[1][1],
                 }
             )
             self.logger.set_snapshot(
@@ -208,12 +220,17 @@ class CoAdapt(CoEvaluate):
                     params.model_f1_filename: self.model_f1,
                     params.model_f2_filename: self.model_f2,
                 },
-                monitor='tgt_val_iou'
+                monitor="src_val_iou"
             )
 
-            print("tgt", validations[1][0], validations[1][1])
+            # print("tgt", validations[1][0], validations[1][1])
             print("src", validations[0][0], validations[0][1])
 
+            #改変
+            step1_feature_np=np.array(step1_feature)
+            dist_path=os.path.join(self.distance_path,f"{epoch+1}")
+            np.save(dist_path,step1_feature_np)
+            #
         self.logger.save_model(
             models={
                 'final_' + params.model_g_filename: self.model_g,

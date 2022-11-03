@@ -10,6 +10,7 @@ import params
 from module.torch import metrics
 from module.torch.base_trainer import BaseTrainer
 from module.torch.logger import Logger
+import os
 
 
 class CoEvaluate(BaseTrainer):
@@ -42,20 +43,37 @@ class CoEvaluate(BaseTrainer):
     def forward(self, images: list, label):
         predict2 = self.model_f2(self.model_g(images[0], images[1])[1])
         predict1 = self.model_f1(self.model_g(images[1], images[2])[0])
+        # feature取得
+        dist=self.model_g(images[0],images[0])[2]
         predict = predict1 + predict2
         loss = self.cce_criterion(predict, label)
         hist = metrics.calc_hist(predict, label, params.num_class)
-        return loss.item(), hist, predict
+        return loss.item(), hist, predict,dist
 
     def evaluate(self, images: list, label):
-        loss, hist, predict = self.forward(images, label)
+        loss, hist, predict ,dist= self.forward(images, label)
         iou_list = metrics.iou_metrics(hist, mode='none')
         self.preview.show(self.create_on_mask_images(images[1], predict, label), 'mask')
         with open(self.validate_path, 'a') as log:
             csv.writer(log).writerow(np.asarray(np.hstack([loss, iou_list])))
-        return loss, hist
+        return loss, hist,dist
 
-    def evaluate_run(self, data_loaders: list):
+
+    #改変
+    def tgt_forward(self,images: list):
+        predict2 = self.model_f2(self.model_g(images[0], images[1])[1])
+        predict1 = self.model_f1(self.model_g(images[1], images[2])[0])
+        dist=self.model_g(images[0],images[0])[2]
+        predict = predict1 + predict2
+        return predict, dist
+
+    def tgt_evaluate(self,images: list):
+        predict ,dist= self.tgt_forward(images)
+        self.preview.show(self.tgt_create_on_mask_images(images[1], predict), 'mask')
+    #
+
+    # def evaluate_run(self, data_loaders: list,tgt_data_loaders: list):
+    def evaluate_run(self, data_loaders: list, tgt_data_loaders: list):
         self.build_model()
         for data_loader in data_loaders:
             total_loss = []
@@ -67,11 +85,26 @@ class CoEvaluate(BaseTrainer):
                     dataset['image3'].to(self.device),
                 ]
                 labels = dataset['label2'].to(self.device)
-                times_list = dataset['times']
-                if times_list[1] in params.val_index_list:
-                    loss, hist = self.evaluate(images_list, labels)
-                    total_loss.append(loss)
-                    total_hist += hist
+                # times_list = dataset['times']
+                # if times_list[1] in params.val_index_list:
+                loss, hist,distance = self.evaluate(images_list, labels)
+                total_loss.append(loss)
+                total_hist += hist
+                #feature 保存
+                # distance= distance.to('cpu').detach().numpy().copy()
+                    # time=str(dataset["times"][0].item())
+                    # print(time)
+                # dist_path=os.path.join(self.distance_path)
+                # np.save(dist_path,distance)
+        for tgt_data_loader in tgt_data_loaders:
+            for tgt_dataset in progressbar(tgt_data_loader):
+                tgt_images_list = [
+                    tgt_dataset['image1'].to(self.device),
+                    tgt_dataset['image2'].to(self.device),
+                    tgt_dataset['image3'].to(self.device),
+                ]
+                self.tgt_evaluate(tgt_images_list)
+
 
             with open(self.validate_path, 'a') as log:
                 ious = metrics.iou_metrics(total_hist, mode='none')
@@ -80,3 +113,4 @@ class CoEvaluate(BaseTrainer):
                 writer.writerow([""] + ["iou_class"] + [""] * (len(ious) - 1) + ["miou"])
                 writer.writerow(np.hstack([np.mean(total_loss), ious, np.nanmean(ious)]))
                 writer.writerow([])
+            

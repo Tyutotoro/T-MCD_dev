@@ -8,9 +8,11 @@ class DoubleConv(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=True),
             nn.BatchNorm2d(out_ch),
+            # nn.InstanceNorm2d(out_ch),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=True),
             nn.BatchNorm2d(out_ch),
+            # nn.InstanceNorm2d(out_ch),
             nn.ReLU(inplace=True),
         )
 
@@ -193,7 +195,7 @@ class CoDetectionBase(nn.Module):
         x8 = self.up1(x7, x6)
         x9 = self.up2(x8, x5)
 
-        return (x9, x3_t2, x2_t1), (x9, x3_t2, x2_t2)
+        return (x9, x3_t2, x2_t1), (x9, x3_t2, x2_t2),(x7)
 
 
 class CoDetectionBaseJ1(nn.Module):

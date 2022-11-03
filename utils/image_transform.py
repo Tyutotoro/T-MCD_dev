@@ -20,6 +20,22 @@ class ImageTransform:
                     RandomGammaCorrection(),
                     ToTensor(),
                 ]),
+                #改変
+                'atp-4_train': Compose([
+                    Resize(int(size * 1.5)),
+                    RandomCrop(size),
+                    RandomRot90(),
+                    RandomGammaCorrection(),
+                    ToTensor(),
+                ]),
+                'WDDD2_WT_train': Compose([
+                    Resize(int(size * 1.5)),
+                    RandomCrop(size),
+                    RandomRot90(),
+                    RandomGammaCorrection(),
+                    ToTensor(),
+                ]),                
+                #
             }
         else:
             self.data_transform = {
@@ -33,6 +49,18 @@ class ImageTransform:
                     CenterCrop(size),
                     ToTensor(),
                 ]),
+                #改変
+                'atp-4_train': Compose([
+                    Resize(int(size * 1.5)),
+                    CenterCrop(size),
+                    ToTensor(),
+                ]),
+                'WDDD2_WT_train': Compose([
+                    Resize(int(size * 1.5)),
+                    CenterCrop(size),
+                    ToTensor(),
+                ]),
+                #
             }
         self.data_transform['dbscreen_test'] = Compose([
             Resize((int(size * 1.5), size)),
@@ -44,6 +72,18 @@ class ImageTransform:
             CenterCrop(size),
             ToTensor(),
         ])
+        #改変
+        self.data_transform['atp-4_test'] = Compose([
+            Resize(int(size * 1.5)),
+            CenterCrop(size),
+            ToTensor(),
+        ])
+        self.data_transform['WDDD2_WT_test'] = Compose([
+            Resize(int(size * 1.5)),
+            CenterCrop(size),
+            ToTensor(),
+        ])
+        #
         self.data_transform['common'] = Compose([
             # RandomCrop(resize),
             # CenterCrop(resize),

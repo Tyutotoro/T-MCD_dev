@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from pytorch_lightning.metrics.functional import iou
+# from pytorch_lightning.metrics.functional import iou
 from sklearn.metrics import recall_score
 
 SMOOTH = 1e-15
@@ -70,17 +70,17 @@ def __per_class_iou__(hist):
     return np.diag(hist) * 100 / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
 
 
-def iou_lightning_metrics(pred_y, true_y, mode='elementwise_mean', ignore_id=0):
-    """
-    :param ignore_id:
-    :param pred_y:
-    :param true_y:
-    :param mode:
-    :return:
-    """
-    pred_y = pred_y.max(dim=1)[1].view(-1).cpu()
-    true_y = true_y.view(-1).cpu()
-    return iou(pred_y, true_y, reduction=mode, ignore_index=ignore_id).numpy()
+# def iou_lightning_metrics(pred_y, true_y, mode='elementwise_mean', ignore_id=0):
+#     """
+#     :param ignore_id:
+#     :param pred_y:
+#     :param true_y:
+#     :param mode:
+#     :return:
+#     """
+#     pred_y = pred_y.max(dim=1)[1].view(-1).cpu()
+#     true_y = true_y.view(-1).cpu()
+#     return iou(pred_y, true_y, reduction=mode, ignore_index=ignore_id).numpy()
 
 
 def iou_metrics(hist: np.ndarray, mode='mean', background_id=0):

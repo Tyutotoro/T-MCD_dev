@@ -13,6 +13,7 @@ class BaseTrainer:
         self.logger = logger
         self.model_path = logger.snapshot_path
         self.validate_path = logger.validate_path
+        self.distance_path=logger.distance_path
         self.preview = Preview(self.logger.log_path, palette=self.logger.palette)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -22,7 +23,7 @@ class BaseTrainer:
     # set requies_grad=Fasle to avoid computation
     @staticmethod
     def set_requires_grad(nets, requires_grad=False):
-        if not isinstance(nets, list):
+        if not isinstance(nets, list): #netsがlist型かどうか判定
             nets = [nets]
         for net in nets:
             if net is not None:
@@ -66,6 +67,25 @@ class BaseTrainer:
 
             on_mask_images.append(color_image)
         return np.asarray(on_mask_images)
+    #改変
+    def tgt_create_on_mask_images(self, images, predicts):
+        on_mask_images = []
+        print("tgt_create mask images")
+        for image, predict, in zip(images, predicts):
+            image = self.__formatting_scale__(np.squeeze(image.cpu().numpy().transpose(1, 2, 0)))
+            predict = predict.max(dim=0)[1].cpu().numpy()
+            color_image = cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+
+            # predict
+            for class_id in np.unique(predict):
+                binary_image = (predict == class_id).astype(np.uint8)
+                binary_image = binary_image * 255
+                result = cv2.findContours(binary_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+                cv2.drawContours(color_image, result[-2], -1, (255, 0, 0), 1)
+
+            on_mask_images.append(color_image)
+        return np.asarray(on_mask_images)
+    #
 
     def evaluate_run(self, data_loaders: list):
         pass
